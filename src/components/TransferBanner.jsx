@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Check, X, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/animate-ui/components/buttons/button'
 
 export default function TransferBanner({ suggestions, onApprove, onDismiss }) {
   const [processingId, setProcessingId] = useState(null)
@@ -29,15 +30,21 @@ export default function TransferBanner({ suggestions, onApprove, onDismiss }) {
             </div>
           </div>
           <div className="flex items-center gap-2 self-end sm:self-center">
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => onDismiss(s.id)}
-              className="inline-flex items-center gap-1 bg-white border border-border hover:bg-slate text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               disabled={processingId === s.id}
+              className="text-xs font-medium"
             >
               <X className="w-3.5 h-3.5 text-ink-3" />
               Dismiss
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
               onClick={async () => {
                 setProcessingId(s.id)
                 try {
@@ -48,8 +55,8 @@ export default function TransferBanner({ suggestions, onApprove, onDismiss }) {
                   setProcessingId(null)
                 }
               }}
-              className="inline-flex items-center gap-1.5 bg-brand hover:bg-brand-dark text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
               disabled={processingId === s.id}
+              className="text-xs font-semibold"
             >
               {processingId === s.id ? (
                 <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -57,7 +64,7 @@ export default function TransferBanner({ suggestions, onApprove, onDismiss }) {
                 <Check className="w-3.5 h-3.5" />
               )}
               Approve Transfer
-            </button>
+            </Button>
           </div>
         </div>
       ))}

@@ -2,6 +2,7 @@
 
 import { forwardRef, useState } from 'react'
 import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
+import { Button } from '@/components/animate-ui/components/buttons/button'
 
 const ICONS = { mail: Mail, user: User, lock: Lock }
 
@@ -89,16 +90,18 @@ function PasswordFieldInner(
   const [revealed, setRevealed] = useState(false)
 
   const Toggle = (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={() => setRevealed((r) => !r)}
-      className="w-8 h-8 rounded-md flex items-center justify-center text-ink-3 hover:text-ink hover:bg-slate transition-colors"
+      className="text-ink-3 hover:text-ink hover:bg-slate"
       aria-label={revealed ? 'Hide password' : 'Show password'}
       aria-pressed={revealed}
       tabIndex={-1}
     >
       {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-    </button>
+    </Button>
   )
 
   return (

@@ -1,25 +1,37 @@
-export default function Button({ children, variant = 'primary', size = 'md', className = '', ...props }) {
-  const base =
-    'inline-flex items-center justify-center gap-2 font-sans font-medium rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2'
+import { Button as AnimateButton } from '@/components/animate-ui/components/buttons/button';
 
-  const variants = {
-    primary: 'bg-brand text-white hover:bg-brand-dark active:scale-[0.98] shadow-sm',
-    secondary: 'bg-white text-ink border border-border-2 hover:bg-slate active:scale-[0.98]',
-    ghost: 'text-ink-2 hover:text-ink hover:bg-slate',
-  }
+// Brand-themed wrapper around the animate-ui Button. Kept as a thin adapter
+// so the original public API (variant: primary|secondary|ghost, size: sm|md|lg,
+// asChild, ...props) still works for any consumer that imports it directly.
+const variantMap = {
+  primary: 'default',
+  secondary: 'outline',
+  ghost: 'ghost',
+}
 
-  const sizes = {
-    sm: 'text-sm px-4 py-2',
-    md: 'text-sm px-5 py-2.5',
-    lg: 'text-base px-7 py-3.5',
-  }
+const sizeMap = {
+  sm: 'sm',
+  md: 'default',
+  lg: 'lg',
+}
 
+export default function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
+  className = '',
+  asChild = false,
+  ...props
+}) {
   return (
-    <button
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+    <AnimateButton
+      variant={variantMap[variant] ?? 'default'}
+      size={sizeMap[size] ?? 'default'}
+      className={className}
+      asChild={asChild}
       {...props}
     >
       {children}
-    </button>
+    </AnimateButton>
   )
 }

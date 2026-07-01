@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { ArrowLeft, Inbox, CheckCircle2 } from 'lucide-react'
 import { TextField } from '@/components/TextField'
 import SubmitButton from '@/components/SubmitButton'
+import { Button } from '@/components/animate-ui/components/buttons/button'
 import FormAlert from '@/components/FormAlert'
 import { supabase } from '@/lib/supabase'
 import { friendlyAuthError } from '@/lib/auth-errors'
@@ -89,23 +90,26 @@ export default function ForgotPasswordPage() {
           </ul>
 
           <div className="flex flex-col gap-2 w-full mt-2">
-            <button
+            <Button
               type="button"
+              variant="link"
+              className="text-sm text-brand font-medium hover:text-brand-dark py-2 text-center h-auto"
               onClick={() => {
                 setSubmitted(false)
                 setEmail('')
               }}
-              className="text-sm text-brand font-medium hover:text-brand-dark py-2 text-center"
             >
               Try a different email
-            </button>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-white border border-border text-ink text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-slate transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to sign in
-            </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center gap-2 text-ink"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to sign in
+              </Link>
+            </Button>
           </div>
         </motion.div>
       ) : (

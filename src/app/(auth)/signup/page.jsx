@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { TextField, PasswordField } from '@/components/TextField'
 import SubmitButton from '@/components/SubmitButton'
+import { Button } from '@/components/animate-ui/components/buttons/button'
 import FormAlert from '@/components/FormAlert'
 import { supabase } from '@/lib/supabase'
 import { friendlyAuthError } from '@/lib/auth-errors'
@@ -103,23 +104,26 @@ export default function SignupPage() {
             </p>
           </div>
           <div className="flex flex-col gap-2 w-full mt-2">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-brand text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-brand-dark transition-colors"
-            >
-              Back to sign in
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <button
+            <Button asChild>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center"
+              >
+                Back to sign in
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
+            <Button
               type="button"
+              variant="link"
+              className="text-sm text-ink-3 hover:text-ink-2 py-2 h-auto"
               onClick={() => {
                 setSubmitted(false)
                 setPassword('')
               }}
-              className="text-sm text-ink-3 hover:text-ink-2 py-2"
             >
               Use a different email
-            </button>
+            </Button>
           </div>
         </motion.div>
       ) : (
