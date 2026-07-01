@@ -1,7 +1,7 @@
 'use client'
 
-import { Package } from 'lucide-react'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
 import { Stagger, StaggerItem, Reveal } from '@/components/motion'
 
 const FOOTER_LINKS = {
@@ -22,14 +22,7 @@ export default function Footer() {
         >
           {/* Brand column — single reveal, slight upward motion */}
           <StaggerItem className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
-                <Package className="w-4 h-4 text-white" strokeWidth={2} />
-              </div>
-              <span className="font-sans font-semibold text-[15px] text-white tracking-tight">
-                Counted
-              </span>
-            </Link>
+            <Logo href="/" size={28} className="mb-4" />
             <p className="text-sm leading-relaxed max-w-xs mb-5">
               Affordable multi-location inventory for small retail and restaurant operators.
               Real-time. Mobile-first. No enterprise contract.

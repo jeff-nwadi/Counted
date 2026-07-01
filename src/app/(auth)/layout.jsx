@@ -1,5 +1,5 @@
-import { Package, CheckCircle2, MapPin, ArrowRightLeft } from 'lucide-react'
-import Link from 'next/link'
+import { CheckCircle2, MapPin, ArrowRightLeft } from 'lucide-react'
+import Logo from '@/components/Logo'
 
 /**
  * Route group layout for /login, /signup, /forgot-password.
@@ -25,10 +25,7 @@ export default function AuthLayout({ children }) {
         />
 
         <div className="relative flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
-            <Package className="w-4 h-4 text-white" strokeWidth={2} />
-          </div>
-          <Link href="/" className="font-sans font-semibold text-[17px] tracking-tight">Counted</Link>
+          <Logo href="/" size={32} />
         </div>
 
         <div className="relative flex-1 flex flex-col justify-center max-w-md mt-10">

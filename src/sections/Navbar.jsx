@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
-import { Menu, X, Package } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
@@ -57,14 +58,7 @@ export default function Navbar() {
       >
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Counted home">
-            <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
-              <Package className="w-4 h-4 text-white" strokeWidth={2} />
-            </div>
-            <span className="font-sans font-semibold text-[15px] text-ink tracking-tight">
-              Counted
-            </span>
-          </Link>
+          <Logo href="/" label="Counted home" />
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">

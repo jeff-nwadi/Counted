@@ -9,6 +9,7 @@ import SubmitButton from '@/components/SubmitButton'
 import FormAlert from '@/components/FormAlert'
 import { supabase } from '@/lib/supabase'
 import { friendlyAuthError } from '@/lib/auth-errors'
+import Logo from '@/components/Logo'
 
 // Map `?reason=...` query values to user-facing messages. Shown above
 // the form when the user arrives at /login via a redirect from elsewhere
@@ -112,13 +113,8 @@ function LoginForm() {
       transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       {/* Mobile-only logo (desktop brand panel already shows it) */}
-      <div className="flex items-center gap-2 mb-8 md:hidden">
-        <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-sans font-bold text-sm">
-          C
-        </div>
-        <span className="font-sans font-semibold text-[17px] tracking-tight text-ink">
-          Counted
-        </span>
+      <div className="mb-8 md:hidden">
+        <Logo href="/" size={32} />
       </div>
 
       <h1 className="font-display text-3xl sm:text-4xl text-ink leading-tight mb-2">
