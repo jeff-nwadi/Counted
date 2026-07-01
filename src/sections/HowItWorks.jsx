@@ -1,3 +1,9 @@
+'use client'
+
+import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react'
+import { useRef } from 'react'
+import { Reveal, Stagger, StaggerItem } from '@/components/motion'
+
 const STEPS = [
   {
     n: '1',
@@ -31,8 +37,9 @@ export default function HowItWorks() {
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
 
-          {/* Left: sticky header */}
-          <div className="lg:sticky lg:top-24">
+          {/* Left: sticky header — single reveal. The stat callout
+              scales in slightly for emphasis. */}
+          <Reveal className="lg:sticky lg:top-24" amount={0.3}>
             <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">
               How it works
             </p>
@@ -54,33 +61,78 @@ export default function HowItWorks() {
                 From sign-up to staff using the mobile view
               </p>
             </div>
-          </div>
+          </Reveal>
 
-          {/* Right: steps */}
-          <div className="flex flex-col gap-0">
-            {STEPS.map((step, i) => (
-              <div key={step.n} className="relative flex gap-5 pb-8 last:pb-0">
-                {i < STEPS.length - 1 && (
-                  <div
-                    className="absolute left-4 top-9 bottom-0 w-px bg-border"
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand text-white text-sm font-semibold flex items-center justify-center z-10">
-                  {step.n}
-                </div>
-                <div className="pt-0.5 pb-2">
-                  <h3 className="font-sans font-semibold text-base text-ink mb-1.5">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-ink-2 leading-relaxed mb-1.5">{step.body}</p>
-                  <p className="text-xs text-ink-3">{step.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Right: steps. Each step staggers in; the connecting line
+              between the numbered bubbles draws on as the steps scroll
+              into view. */}
+          <StepsColumn />
         </div>
       </div>
     </section>
+  )
+}
+
+/**
+ * Right column of the HowItWorks section. Owns its own scroll progress
+ * for the line-draw effect, which is why it lives outside the main
+ * component.
+ */
+function StepsColumn() {
+  const containerRef = useRef(null)
+  const prefersReduced = useReducedMotion()
+
+  // Track scroll progress of THIS column — start when the top enters
+  // the viewport, end when the bottom leaves. The line's `scaleY` is
+  // driven by this so it draws down as the user scrolls.
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start 0.6', 'end 0.4'],
+  })
+  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1])
+
+  return (
+    <div ref={containerRef} className="flex flex-col gap-0 relative">
+      {/* Connector line — full-height track (very faint), with a
+          brand-colored overlay that scales down from 1→0 as you scroll
+          past, creating a "drawing" effect. Only renders if motion is
+          allowed. */}
+      <div
+        className="absolute left-4 top-9 bottom-0 w-px bg-border"
+        aria-hidden="true"
+      />
+      {!prefersReduced && (
+        <motion.div
+          aria-hidden="true"
+          style={{ scaleY: lineScale, transformOrigin: 'top' }}
+          className="absolute left-4 top-9 bottom-0 w-px bg-brand"
+        />
+      )}
+
+      <Stagger
+        className="flex flex-col"
+        stagger={0.15}
+        amount={0.15}
+        as="div"
+      >
+        {STEPS.map((step, i) => (
+          <StaggerItem
+            key={step.n}
+            className="relative flex gap-5 pb-8 last:pb-0"
+          >
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand text-white text-sm font-semibold flex items-center justify-center z-10">
+              {step.n}
+            </div>
+            <div className="pt-0.5 pb-2">
+              <h3 className="font-sans font-semibold text-base text-ink mb-1.5">
+                {step.title}
+              </h3>
+              <p className="text-sm text-ink-2 leading-relaxed mb-1.5">{step.body}</p>
+              <p className="text-xs text-ink-3">{step.detail}</p>
+            </div>
+          </StaggerItem>
+        ))}
+      </Stagger>
+    </div>
   )
 }

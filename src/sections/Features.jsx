@@ -1,4 +1,7 @@
+'use client'
+
 import { Zap, Smartphone, ArrowRightLeft, History, Upload } from 'lucide-react'
+import { Reveal, Stagger, StaggerItem } from '@/components/motion'
 
 const FEATURES = [
   {
@@ -40,9 +43,20 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-20 px-5 sm:px-8 bg-slate">
-      <div className="max-w-6xl mx-auto">
-        <div className="max-w-xl mb-14">
+    <section id="features" className="py-20 px-5 sm:px-8 bg-slate relative overflow-hidden">
+      {/* Soft parallax glow that drifts behind the cards. Stays subtle so
+          it doesn't compete with the white cards. */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-brand-light/40 blur-3xl pointer-events-none"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full bg-amber-50 blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-6xl mx-auto relative">
+        <Reveal className="max-w-xl mb-14" amount={0.3}>
           <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">
             Features
           </p>
@@ -50,13 +64,17 @@ export default function Features() {
             One thing, done{' '}
             <span className="italic text-brand">extremely well.</span>
           </h2>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-2 gap-5">
+        <Stagger
+          className="grid md:grid-cols-2 gap-5"
+          stagger={0.1}
+          amount={0.15}
+        >
           {FEATURES.map((feat, i) => (
-            <div
+            <StaggerItem
               key={feat.title}
-              className={`bg-white rounded-2xl p-6 border border-border hover:border-border-2 hover:shadow-card-hover transition-all duration-200 ${
+              className={`bg-white rounded-2xl p-6 border border-border hover:border-border-2 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200 ${
                 i === 4 ? 'md:col-span-2' : ''
               }`}
             >
@@ -76,9 +94,9 @@ export default function Features() {
                   <p className="text-sm text-ink-2 leading-relaxed">{feat.body}</p>
                 </div>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   )

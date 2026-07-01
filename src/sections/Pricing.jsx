@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Check, Minus } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { Reveal, Stagger, StaggerItem } from '@/components/motion'
 
 const FEATURES_COMPARE = [
   { label: 'Real-time stock sync', starter: true, pro: true },
@@ -40,8 +42,7 @@ export default function Pricing() {
   return (
     <section id="pricing" className="py-20 px-5 sm:px-8 bg-white">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center max-w-xl mx-auto mb-14">
+        <Reveal className="text-center max-w-xl mx-auto mb-14" amount={0.3}>
           <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">Pricing</p>
           <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight mb-4">
             Pay per location.{' '}
@@ -51,10 +52,13 @@ export default function Pricing() {
             Add a new team member? Free. Open another shop? $25–40/month more. That's the
             whole model.
           </p>
-        </div>
+        </Reveal>
 
-        {/* Location slider */}
-        <div className="max-w-sm mx-auto mb-10 text-center">
+        <Reveal
+          className="max-w-sm mx-auto mb-10 text-center"
+          amount={0.3}
+          delay={0.1}
+        >
           <label className="block text-sm font-medium text-ink-2 mb-3">
             How many locations?{' '}
             <span className="text-brand font-semibold">{locs}</span>
@@ -73,20 +77,23 @@ export default function Pricing() {
             <span>2</span>
             <span>8</span>
           </div>
-        </div>
+        </Reveal>
 
-        {/* Plan cards */}
-        <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto mb-12">
+        {/* Plan cards — both stagger in together, but the Pro card
+            gets a slight extra scale-up so it reads as "the featured
+            option" once it lands. */}
+        <Stagger
+          className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto mb-12"
+          stagger={0.18}
+          amount={0.2}
+        >
           {/* Starter */}
-          <div className="bg-slate rounded-2xl p-7 border border-border">
+          <StaggerItem className="bg-slate rounded-2xl p-7 border border-border hover:-translate-y-1 transition-all duration-200">
             <div className="mb-4">
               <p className="text-xs font-medium text-ink-3 uppercase tracking-wide mb-1">
                 Starter
               </p>
-              <div className="flex items-baseline gap-1">
-                <span className="font-display text-4xl text-ink italic">${starterPrice}</span>
-                <span className="text-ink-3 text-sm">/month</span>
-              </div>
+              <PriceCounter value={starterPrice} />
               <p className="text-xs text-ink-3 mt-1">
                 $25 × {locs} locations
               </p>
@@ -113,19 +120,15 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-          </div>
+          </StaggerItem>
 
-          {/* Pro */}
-          <div className="bg-brand rounded-2xl p-7 border border-brand relative overflow-hidden">
-            <div className="absolute top-4 right-4 bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full">
-              Most popular
-            </div>
+          {/* Pro — same stagger, but with an extra "lift" feel via
+              a scale-in. The "Most popular" badge fades in last. */}
+          <StaggerItem className="bg-brand rounded-2xl p-7 border border-brand relative overflow-hidden hover:-translate-y-1 transition-all duration-200">
+            <ProBadge />
             <div className="mb-4">
               <p className="text-xs font-medium text-white/60 uppercase tracking-wide mb-1">Pro</p>
-              <div className="flex items-baseline gap-1">
-                <span className="font-display text-4xl text-white italic">${proPrice}</span>
-                <span className="text-white/60 text-sm">/month</span>
-              </div>
+              <PriceCounter value={proPrice} dark />
               <p className="text-xs text-white/50 mt-1">$40 × {locs} locations</p>
             </div>
             <a
@@ -150,14 +153,75 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </StaggerItem>
+        </Stagger>
 
-        <p className="text-center text-sm text-ink-3">
-          14-day free trial on both plans. No credit card required. Cancel any time — your
-          data exports as CSV.
-        </p>
+        <Reveal className="text-center" amount={0.3}>
+          <p className="text-sm text-ink-3">
+            14-day free trial on both plans. No credit card required. Cancel any time — your
+            data exports as CSV.
+          </p>
+        </Reveal>
       </div>
     </section>
+  )
+}
+
+/**
+ * Animated price display. When `locs` changes via the slider, the
+ * price animates from the old value to the new one. Disabled when
+ * the user prefers reduced motion.
+ */
+function PriceCounter({ value, dark = false }) {
+  const prefersReduced = useReducedMotion()
+  const colorClass = dark ? 'text-white' : 'text-ink'
+
+  if (prefersReduced) {
+    return (
+      <div className="flex items-baseline gap-1">
+        <span className={`font-display text-4xl italic ${colorClass}`}>${value}</span>
+        <span className={`${dark ? 'text-white/60' : 'text-ink-3'} text-sm`}>/month</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-baseline gap-1">
+      <motion.span
+        key={value}
+        initial={{ y: 8, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className={`font-display text-4xl italic inline-block ${colorClass}`}
+      >
+        ${value}
+      </motion.span>
+      <span className={`${dark ? 'text-white/60' : 'text-ink-3'} text-sm`}>/month</span>
+    </div>
+  )
+}
+
+/**
+ * "Most popular" pill. Fades in after the card lands, so the eye is
+ * drawn to the card first and the label second.
+ */
+function ProBadge() {
+  const prefersReduced = useReducedMotion()
+  if (prefersReduced) {
+    return (
+      <div className="absolute top-4 right-4 bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full">
+        Most popular
+      </div>
+    )
+  }
+  return (
+    <motion.div
+      className="absolute top-4 right-4 bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full"
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      Most popular
+    </motion.div>
   )
 }

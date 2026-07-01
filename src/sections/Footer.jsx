@@ -1,5 +1,8 @@
+'use client'
+
 import { Package } from 'lucide-react'
 import Link from 'next/link'
+import { Stagger, StaggerItem, Reveal } from '@/components/motion'
 
 const FOOTER_LINKS = {
   Product: ['Features', 'How it works', 'Pricing', 'Changelog'],
@@ -12,9 +15,13 @@ export default function Footer() {
   return (
     <footer className="bg-ink text-white/60 border-t border-white/10">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-          {/* Brand column */}
-          <div className="lg:col-span-2">
+        <Stagger
+          className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12"
+          stagger={0.08}
+          amount={0.2}
+        >
+          {/* Brand column — single reveal, slight upward motion */}
+          <StaggerItem className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
                 <Package className="w-4 h-4 text-white" strokeWidth={2} />
@@ -28,11 +35,11 @@ export default function Footer() {
               Real-time. Mobile-first. No enterprise contract.
             </p>
             <p className="text-xs text-white/30">Priced per location. Never per user.</p>
-          </div>
+          </StaggerItem>
 
-          {/* Link columns */}
+          {/* Link columns — each column staggers in with the brand col */}
           {Object.entries(FOOTER_LINKS).map(([group, links]) => (
-            <div key={group}>
+            <StaggerItem key={group}>
               <p className="text-xs font-medium text-white uppercase tracking-widest mb-4">
                 {group}
               </p>
@@ -48,18 +55,21 @@ export default function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
 
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Reveal
+          className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4"
+          amount={0.3}
+        >
           <p className="text-xs text-white/30">
             © {new Date().getFullYear()} Counted. All rights reserved.
           </p>
           <p className="text-xs text-white/30">
             Built for the 2–8 location operator who doesn't need an enterprise platform.
           </p>
-        </div>
+        </Reveal>
       </div>
     </footer>
   )

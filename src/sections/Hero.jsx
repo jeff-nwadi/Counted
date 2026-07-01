@@ -8,31 +8,25 @@ import HeroWidget from '@/components/HeroWidget'
 export default function Hero() {
   return (
     <section className="relative pt-32 pb-20 px-5 sm:px-8 bg-white overflow-hidden isolate">
-      {/* Background layer — sits behind the content, clipped to this section. */}
+      {/* Hole background — static layer behind the content. No animation
+          wrapper here so the disc/line pattern renders directly without
+          scroll-linked movement. */}
       <div
         className="absolute inset-0 -z-10 pointer-events-none"
         aria-hidden="true"
       >
         <HoleBackground
-          strokeColor="#cdd3e0"
+          strokeColor="#a8b0c2"
           numberOfLines={36}
           numberOfDiscs={36}
         />
       </div>
-
-      {/* Soft brand tint over the background to keep the white space readable
-          and tie the iridescent animation back to the brand palette. */}
-      <div
-        className="absolute inset-0 -z-10 pointer-events-none bg-[radial-gradient(ellipse_at_50%_40%,rgba(255,255,255,0.6),rgba(255,255,255,0.3)_55%,rgba(255,255,255,0.8)_100%)]"
-        aria-hidden="true"
-      />
 
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* Left: copy */}
           <div className="max-w-xl">
-            {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 bg-brand-light border border-brand-mid text-brand-dark text-xs font-medium px-3 py-1.5 rounded-full mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-brand inline-block" />
               Built for 2–8 location operators
@@ -49,7 +43,6 @@ export default function Hero() {
               No spreadsheet chaos. No $1,500/month platforms.
             </p>
 
-            {/* Social proof micro-line */}
             <div className="flex items-center gap-1.5 mb-8">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -59,7 +52,6 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/signup"
@@ -81,16 +73,14 @@ export default function Hero() {
             </p>
           </div>
 
-          {/* Right: live interactive widget */}
+          {/* Right: live interactive widget — no entrance animation. */}
           <div className="flex justify-center lg:justify-end">
             <div className="relative">
-              {/* Glow */}
               <div
                 className="absolute inset-0 scale-90 blur-3xl opacity-20 rounded-full bg-brand"
                 aria-hidden="true"
               />
               <HeroWidget />
-              {/* Floating badges */}
               <div className="absolute -top-3 -right-3 bg-white border border-border rounded-xl px-3 py-1.5 shadow-card flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-dot" />
                 <span className="text-xs font-medium text-ink">Updates instantly</span>

@@ -115,6 +115,11 @@ function HoleBackground({
       }
     });
     const offCanvas = document.createElement('canvas');
+    // Bail if the element hasn't been measured yet — drawing into a
+    // 0-sized canvas (and then drawImage'ing from it) throws on the
+    // first frame, which happens on slow first paint or when wrapped
+    // in another component that delays layout.
+    if (!width || !height) return;
     offCanvas.width = width;
     offCanvas.height = height;
     const ctx = offCanvas.getContext('2d');
@@ -216,8 +221,12 @@ function HoleBackground({
   }, [strokeColor]);
 
   const drawLines = React.useCallback((ctx) => {
-    if (stateRef.current.linesCanvas) {
-      ctx.drawImage(stateRef.current.linesCanvas, 0, 0);
+    const src = stateRef.current.linesCanvas;
+    // Guard against the source canvas being 0×0 (first frame, before
+    // setLines has produced a real bitmap). drawImage throws on a
+    // zero-sized source.
+    if (src && src.width > 0 && src.height > 0) {
+      ctx.drawImage(src, 0, 0);
     }
   }, []);
 
@@ -300,23 +309,22 @@ function HoleBackground({
       className={cn(
         'relative size-full overflow-hidden',
         'before:content-[""] before:absolute before:top-1/2 before:left-1/2 before:block before:size-[140%] dark:before:[background:radial-gradient(ellipse_at_50%_55%,transparent_10%,black_50%)] before:[background:radial-gradient(ellipse_at_50%_55%,transparent_10%,white_50%)] before:[transform:translate3d(-50%,-50%,0)]',
-        // Purple bloom toned way down — the original `#a900ff` at opacity
-        // 1 with mix-blend-overlay was overpowering the hero copy.
-        'after:content-[""] after:absolute after:z-[5] after:top-1/2 after:left-1/2 after:block after:size-full after:opacity-10 after:[background:radial-gradient(ellipse_at_50%_75%,#cdd3e0_20%,transparent_75%)] after:[transform:translate3d(-50%,-50%,0)]',
+        // Soft purple bloom — gives the section some color so the disc
+        // pattern doesn't disappear against a flat white background.
+        'after:content-[""] after:absolute after:z-[5] after:top-1/2 after:left-1/2 after:block after:size-full after:opacity-25 after:[background:radial-gradient(ellipse_at_50%_75%,#a3b3ff_20%,transparent_75%)] after:[transform:translate3d(-50%,-50%,0)]',
         className
       )}
       {...props}>
       {children}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 block size-full dark:opacity-20 opacity-20" />
+        className="absolute inset-0 block size-full dark:opacity-20 opacity-35" />
       <motion.div
-        // The iridescent gradient used to scream — `#00f8f1` cyan, pink,
-        // yellow at opacity 75 with `mix-blend-plus-darker`. We desaturate
-        // it to a soft brand-tinted fade so the hero stays readable.
+        // Iridescent gradient at moderate opacity so the brand palette
+        // is present but doesn't drown the headline.
         className={cn(
-          'absolute top-[-71.5%] left-1/2 z-[3] w-[30%] h-[140%] rounded-b-full blur-3xl opacity-25 [transform:translate3d(-50%,0,0)] [background-position:0%_100%] [background-size:100%_200%]',
-          'dark:[background:linear-gradient(20deg,#a8b3cf,#c4cee0_16.5%,#b8c2da_33%,#b8c2da_49.5%,#a8b3cf_66%,#a8b3cf_85.5%,#c4cee0_100%)_0_100%_/_100%_200%] [background:linear-gradient(20deg,#dde2ec,#eef1f6_16.5%,#e2e7f0_33%,#e2e7f0_49.5%,#dde2ec_66%,#dde2ec_85.5%,#eef1f6_100%)_0_100%_/_100%_200%]'
+          'absolute top-[-71.5%] left-1/2 z-[3] w-[30%] h-[140%] rounded-b-full blur-3xl opacity-35 [transform:translate3d(-50%,0,0)] [background-position:0%_100%] [background-size:100%_200%]',
+          'dark:[background:linear-gradient(20deg,#7a8db5,#b8c2da_16.5%,#9aa9d4_33%,#9aa9d4_49.5%,#7a8db5_66%,#7a8db5_85.5%,#b8c2da_100%)_0_100%_/_100%_200%] [background:linear-gradient(20deg,#c8d3ec,#dee4f4_16.5%,#d4dcef_33%,#d4dcef_49.5%,#c8d3ec_66%,#c8d3ec_85.5%,#dee4f4_100%)_0_100%_/_100%_200%]'
         )}
         animate={{ backgroundPosition: '0% 300%' }}
         transition={{ duration: 5, ease: 'linear', repeat: Infinity }} />

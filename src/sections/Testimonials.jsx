@@ -1,3 +1,7 @@
+'use client'
+
+import { Reveal, Stagger, StaggerItem } from '@/components/motion'
+
 const TESTIMONIALS = [
   {
     quote:
@@ -27,9 +31,9 @@ const TESTIMONIALS = [
 
 export default function Testimonials() {
   return (
-    <section id="testimonials" className="py-20 px-5 sm:px-8 bg-slate">
+    <section id="testimonials" className="py-20 px-5 sm:px-8 bg-slate relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="max-w-xl mb-14">
+        <Reveal className="max-w-xl mb-14" amount={0.3}>
           <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">
             What operators say
           </p>
@@ -37,13 +41,19 @@ export default function Testimonials() {
             Real shops. Real{' '}
             <span className="italic text-brand">results.</span>
           </h2>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-3 gap-5">
+        {/* Testimonial cards stagger from below with a slightly larger
+            y-offset than the small stat cells, so they feel "heavier". */}
+        <Stagger
+          className="grid md:grid-cols-3 gap-5"
+          stagger={0.13}
+          amount={0.2}
+        >
           {TESTIMONIALS.map((t) => (
-            <div
+            <StaggerItem
               key={t.name}
-              className="bg-white rounded-2xl p-6 border border-border flex flex-col gap-4 hover:shadow-card-hover transition-shadow duration-200"
+              className="bg-white rounded-2xl p-6 border border-border flex flex-col gap-4 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200"
             >
               <div className="font-display text-4xl text-border leading-none" aria-hidden="true">
                 "
@@ -60,9 +70,9 @@ export default function Testimonials() {
                   <p className="text-xs text-ink-3">{t.role}</p>
                 </div>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   )
