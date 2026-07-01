@@ -5,8 +5,11 @@ import { motion } from 'motion/react';
 import { Slot } from '@/components/animate-ui/primitives/animate/slot';
 
 function Button({
-  hoverScale = 1.05,
-  tapScale = 0.95,
+  // Defaults to no motion so the existing CSS `active:scale-[0.98]` /
+  // `active:translate-y-px` rules on the brand buttons keep driving the
+  // press feedback. Callers can opt back in by passing values explicitly.
+  hoverScale = 1,
+  tapScale = 1,
   asChild = false,
   ...props
 }) {

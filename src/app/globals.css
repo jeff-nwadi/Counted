@@ -30,19 +30,20 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --primary: #1a56f5;                           /* brand */
+    --primary-foreground: #ffffff;
+    --primary-hover: #1240c4;                     /* brand-dark */
+    --secondary: #f4f5f7;                         /* slate */
+    --secondary-foreground: #0f1117;              /* ink */
+    --muted: #f4f5f7;                             /* slate */
+    --muted-foreground: #7a7d8a;                  /* ink-3 */
+    --accent: #1240c4;                            /* brand-dark */
+    --accent-foreground: #ffffff;
+    --destructive: #dc2626;                       /* red */
+    --destructive-foreground: #ffffff;
+    --border: #e4e5ea;
+    --input: #e4e5ea;
+    --ring: #1a56f5;                              /* brand — matches global focus ring */
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -51,12 +52,12 @@
     --radius: 0.625rem;
     --sidebar: #f4f5f7;                          /* slate — visible against white page */
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-primary: #1a56f5;                   /* brand */
+    --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #ffffff;                    /* hover state — pure white pops on slate */
     --sidebar-accent-foreground: #0f1117;         /* ink — readable on the white hover */
     --sidebar-border: #e4e5ea;                    /* matches the global border token */
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-ring: #1a56f5;                      /* brand */
   }
   .dark {
     --background: oklch(0.145 0 0);
@@ -112,6 +113,7 @@
   .bg-popover { background-color: var(--popover); }
   .bg-popover-foreground { background-color: var(--popover-foreground); }
   .bg-primary { background-color: var(--primary); }
+  .bg-primary-hover { background-color: var(--primary-hover); }
   .bg-primary-foreground { background-color: var(--primary-foreground); }
   .bg-secondary { background-color: var(--secondary); }
   .bg-secondary-foreground { background-color: var(--secondary-foreground); }
