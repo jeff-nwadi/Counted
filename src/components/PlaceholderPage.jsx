@@ -34,7 +34,7 @@ export default function PlaceholderPage({ eyebrow, title, blurb }) {
           now so you can navigate the rest of the app without 404s, and the
           data layer is staged in{' '}
           <code className="text-[12px] bg-slate px-1.5 py-0.5 rounded">
-            supabase/schema.sql
+            drizzle/0000_*.sql
           </code>
           .
         </p>

@@ -39,7 +39,7 @@ export default function Testimonials() {
           </p>
           <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
             Real shops. Real{' '}
-            <span className="italic text-brand">results.</span>
+            <span className="text-brand">results.</span>
           </h2>
         </Reveal>
 

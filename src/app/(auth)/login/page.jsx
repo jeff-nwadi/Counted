@@ -7,9 +7,10 @@ import { motion } from 'motion/react'
 import { TextField, PasswordField } from '@/components/TextField'
 import SubmitButton from '@/components/SubmitButton'
 import FormAlert from '@/components/FormAlert'
-import { supabase } from '@/lib/supabase'
+import { signIn } from '@/lib/auth-client'
 import { friendlyAuthError } from '@/lib/auth-errors'
 import Logo from '@/components/Logo'
+import { useToast } from '@/components/Toast'
 
 // Map `?reason=...` query values to user-facing messages. Shown above
 // the form when the user arrives at /login via a redirect from elsewhere
@@ -67,6 +68,7 @@ function LoginForm() {
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
   const search = useSearchParams()
   const reason = search.get('reason')
@@ -89,7 +91,7 @@ function LoginForm() {
     setServerError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await signIn.email({
       email: email.trim(),
       password,
     })
@@ -100,6 +102,12 @@ function LoginForm() {
       return
     }
 
+    setLoading(false)
+    // Show the success toast BEFORE the hard navigate — the new
+    // dashboard layout will mount its own ToastProvider and the auth
+    // layout's provider is torn down. Users get a brief confirmation
+    // before the dashboard takes over.
+    toast.success('Signed in', 'Welcome back.')
     // Hard navigate so the server layout re-reads the new session cookie
     // before the dashboard's first render — otherwise a guarded redirect
     // can flash through to /dashboard and bounce back to /login.

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { signOut } from '@/lib/auth-client'
+import { useToast } from '@/components/Toast'
 
 const IDLE_LIMIT_MS = 24 * 60 * 60 * 1000   // 24 hours
 const DEBOUNCE_MS = 1000                     // throttle reset events to once per second
@@ -29,7 +30,7 @@ const ACTIVITY_EVENTS = [
  *   - Listens for user activity (mouse, keyboard, scroll, touch, click).
  *   - Resets a 24h timer on each activity event, debounced to once per
  *     second so a noisy mousemove stream doesn't pin the timer to 0.
- *   - When the timer fires, calls supabase.auth.signOut() and hard-
+ *   - When the timer fires, calls signOut() and hard-
  *     navigates to /login?reason=inactivity so the login page can show
  *     a friendly banner.
  *
@@ -40,6 +41,7 @@ const ACTIVITY_EVENTS = [
  * it on top of this hook — don't replace it.
  */
 export function useInactivityTimer(session) {
+  const toast = useToast()
   // Keep a ref to the latest session so the activity-listener callback
   // doesn't re-bind on every render. The listeners themselves only
   // ever need to reset the timer, never read session, so this is
@@ -69,7 +71,11 @@ export function useInactivityTimer(session) {
       // don't double-fire.
       if (!sessionRef.current) return
 
-      await supabase.auth.signOut()
+      await signOut()
+      // Show the toast before the hard navigate. The /login page lives
+      // on the (auth) layout, which has its own ToastProvider, so this
+      // needs to fire while the dashboard layout is still mounted.
+      toast.info('Signed out', 'You were inactive for 24 hours.')
       // Hard navigate so the dashboard's use-user hook doesn't race us.
       window.location.href = '/login?reason=inactivity'
     }

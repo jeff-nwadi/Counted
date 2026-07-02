@@ -36,7 +36,10 @@ import {
 } from 'lucide-react'
 import { useRequireUser } from '@/hooks/use-user'
 import { useInactivityTimer } from '@/hooks/use-inactivity-timer'
-import { supabase } from '@/lib/supabase'
+import OrgMissingDialog from '@/components/OrgMissingDialog'
+import { signOut } from '@/lib/auth-client'
+import { useToast } from '@/components/Toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Nav items for the five planned screens, in PRD build order.
 const NAV = [
@@ -87,15 +90,29 @@ function isActive(pathname, href, exact) {
 }
 
 export default function DashboardLayout({ children }) {
-  const { session, loading } = useRequireUser()
+  const { session, loading, orgId } = useRequireUser()
   useInactivityTimer(session)
+  // Real-time updates are replaced by TanStack Query's 15s polling
+  // inside useStockQuery.js (see POLL_INTERVAL_MS). One client per
+  // tab, no per-org WebSocket subscription to manage.
   const pathname = usePathname()
   const router = useRouter()
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [signingOut, setSigningOut] = useState(false)
 
   async function handleSignOut() {
     setSigningOut(true)
-    await supabase.auth.signOut()
+    await signOut()
+    // Bust every org-scoped query so the next user (or a re-sign-in
+    // by the same user) starts from an empty cache.
+    queryClient.removeQueries({ queryKey: ['stock'] })
+    queryClient.removeQueries({ queryKey: ['transfers'] })
+    queryClient.removeQueries({ queryKey: ['profile'] })
+    // Show the success toast BEFORE the hard navigate — the login
+    // page is on a separate layout that has its own ToastProvider,
+    // so this one needs to fire first.
+    toast.success('Signed out', 'Come back soon.')
     // Hard navigate so server components re-read the now-empty session
     // and the auth pages don't briefly try to render in the wrong layout.
     window.location.href = '/login'
@@ -103,11 +120,24 @@ export default function DashboardLayout({ children }) {
 
   // While the session probe is in flight, render an empty shell — the
   // SidebarProvider still needs to wrap everything, and the redirect to
-  // /login (if needed) will happen a moment later.
+  // /login (if needed) will happen a moment later. suppressHydrationWarning
+  // is required so browser extensions (ColorZilla, Grammarly, etc.) that
+  // inject attributes into the body/its descendants don't break the
+  // client-side replacement of this spinner.
+  //
+  // role="status" + aria-live="polite" makes screen readers announce
+  // the loading state without interrupting current speech. The
+  // sr-only text is read aloud; the spinner is visual-only.
   if (loading) {
     return (
-      <div className="min-h-svh flex items-center justify-center bg-background">
+      <div
+        className="min-h-svh flex items-center justify-center bg-background"
+        suppressHydrationWarning
+        role="status"
+        aria-live="polite"
+      >
         <div className="size-6 rounded-full border-2 border-border border-t-brand animate-spin" />
+        <span className="sr-only">Loading dashboard…</span>
       </div>
     )
   }
@@ -118,9 +148,30 @@ export default function DashboardLayout({ children }) {
     return null
   }
 
+  // When the user has a session but no org profile (e.g. the trigger
+  // didn't fire or the profile was orphaned), block the dashboard.
+  // M-4: the per-page OrgMissingDialog used to be modal only in name
+  // — the dashboard was still fully interactive behind it. RLS would
+  // block the writes, but the visual state implied "you can't do
+  // anything." Now the dialog is the only thing rendered at this
+  // branch, and the only path forward is sign-out.
+  if (!orgId) {
+    return (
+      <OrgMissingDialog
+        open={true}
+        userId={session.user.id}
+        onSignOut={async () => {
+          await signOut()
+          toast.info('Signed out', 'Try signing in again to refresh your profile.')
+          window.location.href = '/login'
+        }}
+      />
+    )
+  }
+
   const email = session.user.email ?? ''
-  const displayName =
-    session.user.user_metadata?.full_name || email.split('@')[0]
+  // Better Auth stores the user's display name on `user.name`.
+  const displayName = session.user.name || email.split('@')[0]
 
   return (
     <ToastProvider>
@@ -164,45 +215,6 @@ export default function DashboardLayout({ children }) {
                       </SidebarMenuItem>
                     )
                   })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            {/* Sub-group showing the three real data streams, as a visual
-                anchor for the eventual data loading. Disabled (aria-disabled,
-                not a real Link) until those routes exist. */}
-            <SidebarGroup>
-              <SidebarGroupLabel>Coming up</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          aria-disabled="true"
-                          className="opacity-60 cursor-not-allowed"
-                        >
-                          <span>Reorder suggestions</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          aria-disabled="true"
-                          className="opacity-60 cursor-not-allowed"
-                        >
-                          <span>Stock CSV import</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          aria-disabled="true"
-                          className="opacity-60 cursor-not-allowed"
-                        >
-                          <span>Add a location</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

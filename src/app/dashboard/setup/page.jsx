@@ -3,9 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRequireUser } from '@/hooks/use-user'
 import { useStock } from '@/hooks/useStock'
-import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/Toast'
-import OrgMissingDialog from '@/components/OrgMissingDialog'
 import { Upload, Plus, AlertCircle, CheckCircle2, Table, LayoutGrid, HelpCircle } from 'lucide-react'
 
 // Custom robust client-side CSV parser
@@ -100,6 +98,19 @@ export default function SetupPage() {
     const file = e.target.files[0]
     if (!file) return
 
+    // Belt-and-braces size check. The `max` attribute on <input> is
+    // a hint, not a guarantee — older browsers and drag-and-drop
+    // bypass it. 5MB matches the limit in the file picker.
+    const MAX_BYTES = 5 * 1024 * 1024
+    if (file.size > MAX_BYTES) {
+      setImportStatus({
+        type: 'error',
+        msg: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Max is 5MB.`,
+      })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target.result
@@ -138,35 +149,45 @@ export default function SetupPage() {
 
         // 1. Get or Create Item
         let itemId = null
-        
+
         // Find existing item locally first
         const existing = items.find((i) => i.sku.toLowerCase() === sku.toLowerCase())
         if (existing) {
           itemId = existing.id
         } else {
-          // Attempt insert in database
-          const { data: newItem, error: insErr } = await supabase
-            .from('items')
-            .insert({ org_id: orgId, sku, name })
-            .select()
-            .single()
-
-          if (insErr) {
-            // Check for unique key violation constraint
-            if (insErr.code === '23505') {
-              const { data: refetched } = await supabase
-                .from('items')
-                .select('*')
-                .eq('org_id', orgId)
-                .eq('sku', sku)
-                .single()
-              itemId = refetched?.id
-            } else {
+          // POST /api/stock with kind:'item' inserts the row. The
+          // (orgId, sku) unique index means a duplicate insert 409s;
+          // we then refetch by sku to recover the existing item's id.
+          try {
+            const newItem = await fetch('/api/stock', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ kind: 'item', name, sku }),
+            }).then((r) => {
+              if (!r.ok) throw new Error(`HTTP ${r.status}`)
+              return r.json()
+            })
+            itemId = newItem.id
+          } catch (insertErr) {
+            // 409 → unique conflict on (org_id, sku). Refetch via
+            // the items list and reuse the existing row's id.
+            try {
+              const res = await fetch('/api/stock?kind=items', {
+                credentials: 'include',
+              })
+              const all = (await res.json()) ?? []
+              const match = all.find(
+                (i) => i.sku && i.sku.toLowerCase() === sku.toLowerCase()
+              )
+              if (match) itemId = match.id
+            } catch {
+              // fall through, itemId stays null → row is skipped
+            }
+            if (!itemId) {
               failureCount++
               continue
             }
-          } else {
-            itemId = newItem.id
           }
         }
 
@@ -175,26 +196,27 @@ export default function SetupPage() {
           continue
         }
 
-        // 2. Upsert stock level
-        const { error: stockErr } = await supabase
-          .from('stock_levels')
-          .upsert(
-            {
-              org_id: orgId,
-              location_id: targetLocId,
-              item_id: itemId,
+        // 2. Upsert stock level via PATCH /api/stock (which is
+        // already an onConflictDoUpdate keyed on (locationId, itemId)).
+        try {
+          await fetch('/api/stock', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              kind: 'level',
+              locationId: targetLocId,
+              itemId,
               qty,
-              reorder_level: reorder,
-              updated_at: new Date().toISOString()
-            },
-            { onConflict: 'location_id,item_id' }
-          )
-
-        if (stockErr) {
+              reorderLevel: reorder,
+            }),
+          }).then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`)
+          })
+          successCount++
+        } catch (stockErr) {
           console.error('Stock levels insert failed:', stockErr)
           failureCount++
-        } else {
-          successCount++
         }
       }
 
@@ -228,14 +250,8 @@ export default function SetupPage() {
 
   return (
     <div className="max-w-4xl">
-      {/* Org missing – animated dialog from animate-ui */}
-      <OrgMissingDialog
-        open={!loading && !orgId}
-        onSignOut={async () => {
-          await supabase.auth.signOut()
-          window.location.href = '/login'
-        }}
-      />
+      {/* The OrgMissingDialog is mounted by the dashboard layout
+          (see M-4 in the security audit) so it's not duplicated here. */}
 
       {/* Database load error banner */}
       {error && (
@@ -364,12 +380,22 @@ export default function SetupPage() {
                 <input
                   id="csvFile"
                   type="file"
-                  accept=".csv"
+                  accept=".csv,text/csv"
+                  // 5MB cap. Larger CSVs are almost always user error
+                  // (or an attack trying to OOM the browser via the
+                  // FileReader.readAsText path). Server-side rate
+                  // limiting on the import endpoint would be the next
+                  // layer; right now we cap at the browser.
+                  // (5 * 1024 * 1024 = 5242880)
+                  max="5242880"
                   onChange={handleCSVUpload}
                   ref={fileInputRef}
                   disabled={locations.length === 0}
                   className="text-xs border border-border rounded-xl bg-slate/10 px-3 py-2 focus:outline-none cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-brand-light file:text-brand hover:file:bg-brand-mid"
                 />
+                <p className="text-[10px] text-ink-3">
+                  CSV only, max 5MB. Headers on the first line.
+                </p>
               </div>
             </div>
 

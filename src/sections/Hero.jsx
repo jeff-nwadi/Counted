@@ -34,7 +34,7 @@ export default function Hero() {
 
             <h1 className="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight text-ink mb-5">
               Stock that stays{' '}
-              <span className="italic text-brand">in sync.</span>
+              <span className="text-brand">in sync.</span>
             </h1>
 
             <p className="text-ink-2 text-lg leading-relaxed mb-8 text-balance">

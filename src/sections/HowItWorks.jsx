@@ -45,7 +45,7 @@ export default function HowItWorks() {
             </p>
             <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight mb-6">
               From spreadsheet to{' '}
-              <span className="italic text-brand">live in a day.</span>
+              <span className="text-brand">live in a day.</span>
             </h2>
             <p className="text-ink-2 text-lg leading-relaxed mb-8">
               Most inventory platforms involve a sales call, an onboarding project, and staff
@@ -56,7 +56,7 @@ export default function HowItWorks() {
               <p className="text-sm font-medium text-ink mb-1">
                 Average time to first live count
               </p>
-              <div className="font-display text-4xl text-brand italic">47 minutes</div>
+              <div className="font-display text-4xl text-brand">47 minutes</div>
               <p className="text-xs text-ink-3 mt-1">
                 From sign-up to staff using the mobile view
               </p>

@@ -86,7 +86,7 @@ All copy is inline in each section file in `src/sections/`. No separate CMS or c
 Create `src/app/about/page.jsx` — Next.js App Router picks it up automatically at `/about`.
 
 ### Wire up a real signup form
-Replace the `href="#pricing"` links in `Hero.jsx`, `FinalCTA.jsx`, and `Pricing.jsx` with your auth provider's signup URL (Clerk, Auth0, Supabase Auth, etc.).
+Replace the `href="#pricing"` links in `Hero.jsx`, `FinalCTA.jsx`, and `Pricing.jsx` with your auth provider's signup URL (Clerk, Auth0, Better Auth, etc.).
 
 ### Change the font
 `layout.jsx` loads Inter via `next/font/google` (zero layout shift). The display serif (Instrument Serif) is loaded via a `<link>` tag. Swap either by changing the import.
@@ -108,12 +108,12 @@ npm start       # → runs production server on port 3000
 Or use `next export` for a fully static build (remove dynamic server features first).
 
 ### Environment variables
-No environment variables are required for the landing page. When you add a backend (Supabase, Stripe, etc.), add them to `.env.local`:
+The dashboard requires `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `NEXT_PUBLIC_BETTER_AUTH_URL`. Copy `.env.example` to `.env.local` and fill them in:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-STRIPE_SECRET_KEY=...
+DATABASE_URL=postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
+BETTER_AUTH_SECRET=...                 # openssl rand -base64 32
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 ```
 
 ## Performance notes

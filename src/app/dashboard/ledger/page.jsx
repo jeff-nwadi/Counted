@@ -9,8 +9,6 @@ import { useSuggestion } from '@/hooks/useSuggestion'
 import { getStatus } from '@/lib/status'
 import StatusPill from '@/components/StatusPill'
 import TransferBanner from '@/components/TransferBanner'
-import OrgMissingDialog from '@/components/OrgMissingDialog'
-import { supabase } from '@/lib/supabase'
 import { ChevronLeft, Plus, Minus, Settings, Info, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 
@@ -22,7 +20,7 @@ function LedgerContent() {
   const { session } = useRequireUser()
   const { locations, items, stockLevels, loading, error, orgId, adjustStock, updateStockSettings } = useStock()
   const { executeTransfer } = useTransfers()
-  const { suggestions, dismissSuggestion } = useSuggestion(locations, items, stockLevels)
+  const { incoming, outgoing, dismiss } = useSuggestion(locations, items, stockLevels)
 
   const [selectedLocId, setSelectedLocId] = useState('')
 
@@ -58,13 +56,6 @@ function LedgerContent() {
   if (locations.length === 0) {
     return (
       <div className="max-w-2xl">
-        <OrgMissingDialog
-          open={!loading && !orgId}
-          onSignOut={async () => {
-            await supabase.auth.signOut()
-            window.location.href = '/login'
-          }}
-        />
         <h1 className="font-display text-3xl text-ink mb-2">Location Ledger</h1>
         <p className="text-sm text-ink-2 mb-6">Drill into stock details, adjust levels, and handle transfer suggestions.</p>
         {error && (
@@ -98,16 +89,19 @@ function LedgerContent() {
   
   // Filter stock for current location
   const locStocks = stockLevels
-    .filter((s) => s.location_id === selectedLocId)
+    .filter((s) => s.locationId === selectedLocId)
     .map((s) => ({
       ...s,
-      item: items.find((i) => i.id === s.item_id),
+      item: items.find((i) => i.id === s.itemId),
     }))
     .filter((s) => s.item)
     .sort((a, b) => a.item.name.localeCompare(b.item.name))
 
-  // Filter incoming suggestions for this location
-  const incomingSuggestions = suggestions.filter((s) => s.toLocation.id === selectedLocId)
+  // Selected location's incoming + outgoing suggestions. Both lists
+  // are pre-bucketed by the hook keyed on `selectedLocId`, so this is
+  // an O(1) lookup rather than a per-render filter.
+  const incomingSuggestions = selectedLocId ? incoming(selectedLocId) : []
+  const outgoingSuggestions = selectedLocId ? outgoing(selectedLocId) : []
 
   // Handle transfer approval
   const handleApproveTransfer = async (suggestion) => {
@@ -116,21 +110,14 @@ function LedgerContent() {
       suggestion.item.id,
       suggestion.qty,
       suggestion.fromLocation.id,
-      suggestion.toLocation.id,
-      session.user.id
+      suggestion.toLocation.id
     )
   }
 
   return (
     <div className="max-w-5xl">
-      {/* Org missing — animated dialog from animate-ui */}
-      <OrgMissingDialog
-        open={!loading && !orgId}
-        onSignOut={async () => {
-          await supabase.auth.signOut()
-          window.location.href = '/login'
-        }}
-      />
+      {/* The OrgMissingDialog is mounted by the dashboard layout
+          (see M-4 in the security audit) so it's not duplicated here. */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
           <p className="text-sm font-semibold">Database error</p>
@@ -167,11 +154,21 @@ function LedgerContent() {
         </div>
       </div>
 
-      {/* Suggested transfers banner */}
+      {/* Suggested transfers — incoming ("you need it") first, then
+          outgoing ("you can help"). Order matters: a manager looking
+          at this ledger most likely cares about their own stockouts
+          first, then about the surplus they can offer elsewhere. */}
       <TransferBanner
         suggestions={incomingSuggestions}
         onApprove={handleApproveTransfer}
-        onDismiss={dismissSuggestion}
+        onDismiss={dismiss}
+        direction="incoming"
+      />
+      <TransferBanner
+        suggestions={outgoingSuggestions}
+        onApprove={handleApproveTransfer}
+        onDismiss={dismiss}
+        direction="outgoing"
       />
 
       {/* Main Stock Table */}
@@ -200,7 +197,7 @@ function LedgerContent() {
               </thead>
               <tbody className="divide-y divide-border">
                 {locStocks.map((s) => {
-                  const status = getStatus(s.qty, s.reorder_level)
+                  const status = getStatus(s.qty, s.reorderLevel)
                   return (
                     <tr key={s.id} className="hover:bg-slate/10 transition-colors">
                       <td className="px-6 py-4 font-mono text-xs text-ink-2 font-semibold">
@@ -216,7 +213,7 @@ function LedgerContent() {
                         {/* Quantity Adjusters */}
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => adjustStock(s.location_id, s.item_id, s.qty - 1)}
+                            onClick={() => adjustStock(s.locationId, s.itemId, s.qty - 1)}
                             className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-ink-2 hover:bg-slate transition-colors"
                           >
                             <Minus className="w-3.5 h-3.5" />
@@ -225,7 +222,7 @@ function LedgerContent() {
                             {s.qty}
                           </span>
                           <button
-                            onClick={() => adjustStock(s.location_id, s.item_id, s.qty + 1)}
+                            onClick={() => adjustStock(s.locationId, s.itemId, s.qty + 1)}
                             className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-ink-2 hover:bg-slate transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -236,16 +233,16 @@ function LedgerContent() {
                         {/* Reorder Threshold Adjusters */}
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => updateStockSettings(s.location_id, s.item_id, s.qty, Math.max(0, s.reorder_level - 1))}
+                            onClick={() => updateStockSettings(s.locationId, s.itemId, s.qty, Math.max(0, s.reorderLevel - 1))}
                             className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-ink-2 hover:bg-slate transition-colors"
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
                           <span className="w-10 text-center text-sm font-medium text-ink-2">
-                            {s.reorder_level}
+                            {s.reorderLevel}
                           </span>
                           <button
-                            onClick={() => updateStockSettings(s.location_id, s.item_id, s.qty, s.reorder_level + 1)}
+                            onClick={() => updateStockSettings(s.locationId, s.itemId, s.qty, s.reorderLevel + 1)}
                             className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-ink-2 hover:bg-slate transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" />

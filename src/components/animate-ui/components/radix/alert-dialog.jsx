@@ -38,9 +38,17 @@ function AlertDialogContent({
   return (
     <AlertDialogPortalPrimitive>
       <AlertDialogOverlay />
+      {/*
+        Centering: use `inset-0` + `grid place-items-center` so the
+        motion.div's own `transform` (rotateX/scale/blur) doesn't
+        conflict with the translate-based centering. The previous
+        `top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]`
+        approach was wiped out by motion's transform string, leaving
+        the dialog pinned to the top-left of the viewport.
+      */}
       <AlertDialogContentPrimitive
         className={cn(
-          'bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg sm:max-w-lg',
+          'bg-background fixed inset-0 z-50 m-auto grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border p-6 shadow-lg sm:max-w-lg h-fit',
           className
         )}
         {...props} />

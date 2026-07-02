@@ -29,14 +29,14 @@ export default function Problem() {
     <section className="py-20 px-5 sm:px-8 bg-white">
       <div className="max-w-6xl mx-auto">
         {/* Header — single reveal so the section feels grounded. The
-            big italic word uses a slight scale for emphasis. */}
+            accent word uses a slight scale for emphasis. */}
         <Reveal className="max-w-2xl mb-14" amount={0.3}>
           <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">
             The problem
           </p>
           <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight mb-4">
             Running 3 shops off one spreadsheet{' '}
-            <span className="italic text-red-500">costs you money.</span>
+            <span className="text-red-500">costs you money.</span>
           </h2>
           <p className="text-ink-2 text-lg leading-relaxed">
             A real operator lost $8,000 of product in a single month because the shared sheet
@@ -75,7 +75,7 @@ export default function Problem() {
           delay={0.1}
         >
           <div className="flex-1">
-            <p className="font-display text-2xl text-ink italic">
+            <p className="font-display text-2xl text-ink">
               "The spreadsheet was free. The mistakes weren't."
             </p>
             <p className="text-sm text-ink-3 mt-1">
@@ -83,7 +83,7 @@ export default function Problem() {
             </p>
           </div>
           <div className="flex-shrink-0 bg-brand-light border border-brand-mid rounded-xl px-5 py-3 text-center">
-            <div className="font-display text-3xl text-brand italic">$25</div>
+            <div className="font-display text-3xl text-brand">$25</div>
             <div className="text-xs text-brand-dark font-medium mt-0.5">per location / month</div>
           </div>
         </Reveal>

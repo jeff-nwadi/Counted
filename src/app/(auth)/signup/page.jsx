@@ -2,14 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'motion/react'
-import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { motion } from 'motion/react'
+import { ShieldCheck } from 'lucide-react'
 import { TextField, PasswordField } from '@/components/TextField'
 import SubmitButton from '@/components/SubmitButton'
-import { Button } from '@/components/animate-ui/components/buttons/button'
 import FormAlert from '@/components/FormAlert'
-import { supabase } from '@/lib/supabase'
+import { signUp } from '@/lib/auth-client'
 import { friendlyAuthError } from '@/lib/auth-errors'
+import { useToast } from '@/components/Toast'
 
 // Returns a score 0–4 and the meta describing it.
 function passwordStrength(pwd) {
@@ -35,7 +35,7 @@ export default function SignupPage() {
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const toast = useToast()
 
   const strength = useMemo(() => passwordStrength(password), [password])
 
@@ -58,15 +58,14 @@ export default function SignupPage() {
     setServerError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    // Better Auth's signUp creates the user and (because we set
+    // `autoSignIn: true` in src/lib/auth.ts) immediately establishes a
+    // session — no email verification in this pass. The `databaseHooks
+    // .user.create.after` hook creates the org + profile.
+    const { error } = await signUp.email({
       email: email.trim(),
       password,
-      options: {
-        data: { full_name: name.trim() },
-        // Where Supabase sends the user after they click the confirmation link.
-        // Must be added to Supabase Auth → URL Configuration's allow-list.
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      name: name.trim(),
     })
 
     if (error) {
@@ -76,64 +75,24 @@ export default function SignupPage() {
     }
 
     setLoading(false)
-    setSubmitted(true)
+    // Show the success toast BEFORE the hard navigate — the new page
+    // will mount a fresh layout and the toast from the auth layout
+    // gets torn down. Users get a brief confirmation in the corner
+    // before the dashboard takes over.
+    toast.success('Account created', 'Setting up your dashboard…')
+    // No "check your email" interstitial — the user can sign in now.
+    // Hard-navigate so the dashboard layout re-reads the session cookie.
+    window.location.href = '/dashboard'
   }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {submitted ? (
-        <motion.div
-          key="success"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="flex flex-col items-start gap-5"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-green-bg flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6 text-green" />
-          </div>
-          <div>
-            <h1 className="font-display text-3xl text-ink leading-tight mb-2">
-              Your account is ready.
-            </h1>
-            <p className="text-sm text-ink-2 leading-relaxed">
-              We sent a confirmation link to{' '}
-              <span className="font-medium text-ink">{email}</span>. Click it any time
-              in the next 30 minutes to finish setup. (We won’t keep emailing — promise.)
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 w-full mt-2">
-            <Button asChild>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center"
-              >
-                Back to sign in
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="link"
-              className="text-sm text-ink-3 hover:text-ink-2 py-2 h-auto"
-              onClick={() => {
-                setSubmitted(false)
-                setPassword('')
-              }}
-            >
-              Use a different email
-            </Button>
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="form"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-        >
+    <motion.div
+      key="form"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+    >
           <div className="flex items-center gap-2 mb-8 md:hidden">
             <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-sans font-bold text-sm">
               C
@@ -258,8 +217,6 @@ export default function SignupPage() {
             <ShieldCheck className="w-3.5 h-3.5" />
             Cancel any time. Your data exports as CSV.
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </motion.div>
   )
 }

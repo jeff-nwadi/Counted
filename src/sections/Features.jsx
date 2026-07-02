@@ -62,7 +62,7 @@ export default function Features() {
           </p>
           <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight">
             One thing, done{' '}
-            <span className="italic text-brand">extremely well.</span>
+            <span className="text-brand">extremely well.</span>
           </h2>
         </Reveal>
 

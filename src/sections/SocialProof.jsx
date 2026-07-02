@@ -31,7 +31,7 @@ export default function SocialProof() {
         >
           {STATS.map((stat) => (
             <StaggerItem key={stat.label} className="text-center">
-              <div className="font-display text-3xl sm:text-4xl text-ink italic mb-1">
+              <div className="font-display text-3xl sm:text-4xl text-ink mb-1">
                 {stat.value}
               </div>
               <div className="text-xs text-ink-3 font-medium uppercase tracking-wide">

@@ -1,168 +1,36 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+/**
+ * Compatibility shim — re-exports the TanStack-Query-backed hook with
+ * the same shape the dashboard pages were written against. New code
+ * should import the query hooks directly from `@/hooks/useStockQuery`.
+ *
+ * The realtime subscription is owned by the dashboard layout
+ * (`useTransfersRealtime(orgId)`) so we don't open one channel per page.
+ */
+
+import { useOrg } from '@/hooks/useStockQuery'
+import {
+  useTransfersList,
+  useExecuteTransfer,
+} from '@/hooks/useStockQuery'
 
 export function useTransfers() {
-  const [transfers, setTransfers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [orgId, setOrgId] = useState(null)
+  const { orgId } = useOrg()
 
-  useEffect(() => {
-    let active = true
+  const listQ = useTransfersList(orgId)
+  const executeMut = useExecuteTransfer(orgId)
 
-    async function loadData() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user || !active) return
-
-        // Get org_id
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('org_id')
-          .eq('user_id', user.id)
-          .single()
-
-        if (profileErr) throw profileErr
-        if (!profile || !active) return
-
-        const currentOrgId = profile.org_id
-        setOrgId(currentOrgId)
-
-        // Fetch transfers
-        const { data, error: err } = await supabase
-          .from('transfers')
-          .select('*')
-          .eq('org_id', currentOrgId)
-          .order('created_at', { ascending: false })
-
-        if (err) throw err
-        if (active) {
-          setTransfers(data || [])
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Error fetching transfers:', err)
-        if (active) {
-          setError(err.message)
-          setLoading(false)
-        }
-      }
-    }
-
-    loadData()
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  // Live subscription to transfers table
-  useEffect(() => {
-    if (!orgId) return
-
-    const channel = supabase
-      .channel('transfers-realtime-channel')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'transfers', filter: `org_id=eq.${orgId}` },
-        (payload) => {
-          setTransfers((prev) => {
-            if (prev.some((t) => t.id === payload.new.id)) return prev
-            return [payload.new, ...prev]
-          })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [orgId])
-
-  // Executes a transfer: logs the transfer and updates quantities at both locations
-  const executeTransfer = useCallback(async (itemId, qty, fromLocId, toLocId, userId) => {
-    if (!orgId) {
-      throw new Error('No organization profile found. You cannot perform this action.')
-    }
-
-    try {
-      // 1. Insert the transfer record
-      const { data: transfer, error: txError } = await supabase
-        .from('transfers')
-        .insert({
-          org_id: orgId,
-          item_id: itemId,
-          qty,
-          from_location: fromLocId,
-          to_location: toLocId,
-          created_by: userId
-        })
-        .select()
-        .single()
-
-      if (txError) throw txError
-
-      // 2. Decrement quantity from source location
-      const { data: fromStock, error: fromErr } = await supabase
-        .from('stock_levels')
-        .select('*')
-        .eq('location_id', fromLocId)
-        .eq('item_id', itemId)
-        .single()
-
-      if (fromErr && fromErr.code !== 'PGRST116') throw fromErr // PGRST116 is code for no rows returned
-
-      if (fromStock) {
-        const { error: updErr } = await supabase
-          .from('stock_levels')
-          .update({ qty: Math.max(0, fromStock.qty - qty), updated_at: new Date().toISOString() })
-          .eq('id', fromStock.id)
-        if (updErr) throw updErr
-      }
-
-      // 3. Increment quantity at destination location (upsert)
-      const { data: toStock, error: toErr } = await supabase
-        .from('stock_levels')
-        .select('*')
-        .eq('location_id', toLocId)
-        .eq('item_id', itemId)
-        .single()
-
-      if (toErr && toErr.code !== 'PGRST116') throw toErr
-
-      if (toStock) {
-        const { error: updErr } = await supabase
-          .from('stock_levels')
-          .update({ qty: toStock.qty + qty, updated_at: new Date().toISOString() })
-          .eq('id', toStock.id)
-        if (updErr) throw updErr
-      } else {
-        const { error: insErr } = await supabase
-          .from('stock_levels')
-          .insert({
-            org_id: orgId,
-            location_id: toLocId,
-            item_id: itemId,
-            qty,
-            reorder_level: 0,
-            updated_at: new Date().toISOString()
-          })
-        if (insErr) throw insErr
-      }
-
-      return transfer
-    } catch (err) {
-      console.error('Failed to execute transfer:', err)
-      throw err
-    }
-  }, [orgId])
+  // Adapter: the old signature took positional args, the new mutation
+  // takes a single object. The userId is no longer needed — the
+  // `transfer_stock` RPC reads auth.uid() server-side.
+  const executeTransfer = (itemId, qty, fromLocation, toLocation) =>
+    executeMut.mutateAsync({ itemId, qty, fromLocation, toLocation })
 
   return {
-    transfers,
-    loading,
-    error,
-    executeTransfer
+    transfers: listQ.data ?? [],
+    loading: listQ.isLoading || !orgId,
+    error: listQ.error?.message ?? null,
+    executeTransfer,
   }
 }

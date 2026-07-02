@@ -1,13 +1,20 @@
 import { CheckCircle2, MapPin, ArrowRightLeft } from 'lucide-react'
 import Logo from '@/components/Logo'
+import { ToastProvider } from '@/components/Toast'
 
 /**
  * Route group layout for /login, /signup, /forgot-password.
  * Intentionally does NOT inherit the marketing Navbar/Footer from the
  * landing page — auth flows want a focused, chrome-less surface.
+ *
+ * ToastProvider is mounted here so the auth pages can call
+ * `useToast()` for success / error feedback (e.g. "Account created",
+ * "Signed in"). The dashboard layout has its own provider, so toasts
+ * here won't leak into dashboard pages.
  */
 export default function AuthLayout({ children }) {
   return (
+    <ToastProvider>
     <div className="min-h-svh bg-white flex">
       {/* Left brand panel — visible md+ only */}
       <aside
@@ -105,5 +112,6 @@ export default function AuthLayout({ children }) {
         </div>
       </main>
     </div>
+    </ToastProvider>
   )
 }

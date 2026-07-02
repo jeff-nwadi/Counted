@@ -1,78 +1,46 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/hooks/useStockQuery'
 
 /**
- * Returns the current Supabase session and a loading flag.
+ * Returns the current session and a loading flag.
  *
- * - `loading: true` until Supabase has answered the first session probe
+ * - `loading: true` until the session probe has answered
  *   (typically <100ms after page load).
  * - `session: null` once the probe completes and there's no signed-in user.
  *
  * Callers that need to *guard* a route (redirect away if not signed in)
  * should use `useRequireUser` instead — this hook is for *display* only.
+ *
+ * The session shape mirrors Better Auth's response: `{ user: { id, email, name, image, ... }, session: { ... } }`.
+ * The user object used to read `user.user_metadata?.full_name` (the
+ * Supabase Auth shape) — that is now `user.name`.
  */
 export function useUser() {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let mounted = true
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return
-      setSession(data.session ?? null)
-      setLoading(false)
-    })
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
-      if (!mounted) return
-      setSession(next ?? null)
-
-      // If the session was ended server-side (token expired and the refresh
-      // token also failed, or our own inactivity timer fired signOut), kick
-      // the user to the login screen right away. Without this, a stale
-      // session would sit in memory until the next render.
-      if (event === 'SIGNED_OUT') {
-        // Only redirect if we're not already on an auth route — otherwise
-        // the callback route's sign-out during the code exchange would loop.
-        if (
-          typeof window !== 'undefined' &&
-          !window.location.pathname.startsWith('/login') &&
-          !window.location.pathname.startsWith('/signup') &&
-          !window.location.pathname.startsWith('/forgot-password') &&
-          !window.location.pathname.startsWith('/auth/')
-        ) {
-          window.location.href = '/login?reason=session-ended'
-        }
-      }
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
-
-  return { session, loading }
+  const { session, isLoading } = useOrg()
+  return { session, loading: isLoading }
 }
 
 /**
  * Same as `useUser`, but redirects to /login if no session is found.
  * Use this in dashboard layouts — the redirect is silent and the loading
  * state covers the gap.
+ *
+ * Also returns `orgId` so the dashboard layout can read the org's data
+ * without making a second `useOrg()` call.
  */
 export function useRequireUser() {
   const router = useRouter()
-  const { session, loading } = useUser()
+  const { session, isLoading, orgId } = useOrg()
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (isLoading) return
+    if (!session) {
       router.replace('/login')
     }
-  }, [loading, session, router])
+  }, [isLoading, session, router])
 
-  return { session, loading }
+  return { session, loading: isLoading, orgId }
 }

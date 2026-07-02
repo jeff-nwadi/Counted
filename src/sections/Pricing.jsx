@@ -46,7 +46,7 @@ export default function Pricing() {
           <p className="text-xs font-medium text-ink-3 uppercase tracking-widest mb-3">Pricing</p>
           <h2 className="font-display text-4xl sm:text-5xl text-ink leading-tight mb-4">
             Pay per location.{' '}
-            <span className="italic text-brand">Never per user.</span>
+            <span className="text-brand">Never per user.</span>
           </h2>
           <p className="text-ink-2 text-lg">
             Add a new team member? Free. Open another shop? $25–40/month more. That's the
@@ -179,7 +179,7 @@ function PriceCounter({ value, dark = false }) {
   if (prefersReduced) {
     return (
       <div className="flex items-baseline gap-1">
-        <span className={`font-display text-4xl italic ${colorClass}`}>${value}</span>
+        <span className={`font-display text-4xl ${colorClass}`}>${value}</span>
         <span className={`${dark ? 'text-white/60' : 'text-ink-3'} text-sm`}>/month</span>
       </div>
     )
@@ -192,7 +192,7 @@ function PriceCounter({ value, dark = false }) {
         initial={{ y: 8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className={`font-display text-4xl italic inline-block ${colorClass}`}
+        className={`font-display text-4xl inline-block ${colorClass}`}
       >
         ${value}
       </motion.span>

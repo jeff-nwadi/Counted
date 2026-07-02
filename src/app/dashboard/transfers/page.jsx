@@ -3,8 +3,6 @@
 import { useRequireUser } from '@/hooks/use-user'
 import { useTransfers } from '@/hooks/useTransfers'
 import { useStock } from '@/hooks/useStock'
-import OrgMissingDialog from '@/components/OrgMissingDialog'
-import { supabase } from '@/lib/supabase'
 import { ArrowRight, History, HelpCircle } from 'lucide-react'
 
 export default function TransfersHistoryPage() {
@@ -28,9 +26,9 @@ export default function TransfersHistoryPage() {
 
   // Map IDs to display names
   const enrichedTransfers = transfers.map((t) => {
-    const item = items.find((i) => i.id === t.item_id)
-    const fromLoc = locations.find((l) => l.id === t.from_location)
-    const toLoc = locations.find((l) => l.id === t.to_location)
+    const item = items.find((i) => i.id === t.itemId)
+    const fromLoc = locations.find((l) => l.id === t.fromLocationId)
+    const toLoc = locations.find((l) => l.id === t.toLocationId)
 
     return {
       ...t,
@@ -38,7 +36,7 @@ export default function TransfersHistoryPage() {
       itemName: item?.name ?? 'Unknown Item',
       fromLocName: fromLoc?.name ?? 'Unknown Location',
       toLocName: toLoc?.name ?? 'Unknown Location',
-      formattedDate: new Date(t.created_at).toLocaleString(undefined, {
+      formattedDate: new Date(t.createdAt).toLocaleString(undefined, {
         dateStyle: 'short',
         timeStyle: 'short',
       }),
@@ -47,14 +45,8 @@ export default function TransfersHistoryPage() {
 
   return (
     <div className="max-w-5xl">
-      {/* Org missing — animated dialog from animate-ui */}
-      <OrgMissingDialog
-        open={!loading && !orgId}
-        onSignOut={async () => {
-          await supabase.auth.signOut()
-          window.location.href = '/login'
-        }}
-      />
+      {/* The OrgMissingDialog is mounted by the dashboard layout
+          (see M-4 in the security audit) so it's not duplicated here. */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
           <p className="text-sm font-semibold">Database error</p>

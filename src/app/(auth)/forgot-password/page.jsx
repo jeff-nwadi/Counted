@@ -8,7 +8,7 @@ import { TextField } from '@/components/TextField'
 import SubmitButton from '@/components/SubmitButton'
 import { Button } from '@/components/animate-ui/components/buttons/button'
 import FormAlert from '@/components/FormAlert'
-import { supabase } from '@/lib/supabase'
+import { authClient } from '@/lib/auth-client'
 import { friendlyAuthError } from '@/lib/auth-errors'
 
 export default function ForgotPasswordPage() {
@@ -36,12 +36,15 @@ export default function ForgotPasswordPage() {
     setServerError('')
     setLoading(true)
 
-    const { error: authError } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-      }
-    )
+    // Better Auth's forgetPassword posts to /api/auth/forget-password.
+    // The user gets a link that lands on /reset-password with a token
+    // in the URL — that page (src/app/(auth)/reset-password/page.jsx)
+    // calls authClient.resetPassword({ newPassword }) to finish the
+    // flow.
+    const { error: authError } = await authClient.forgetPassword({
+      email: email.trim(),
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
 
     if (authError) {
       setServerError(friendlyAuthError(authError))

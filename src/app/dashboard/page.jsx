@@ -4,18 +4,17 @@ import { Suspense } from 'react'
 import { useRequireUser } from '@/hooks/use-user'
 import { useStock } from '@/hooks/useStock'
 import { getStatus, getStatusDetails } from '@/lib/status'
-import { Boxes, ArrowRight, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Boxes, ArrowRight, Sparkles, AlertTriangle, CheckCircle2, ArrowRightLeft } from 'lucide-react'
 import Link from 'next/link'
-import OrgMissingDialog from '@/components/OrgMissingDialog'
-import { supabase } from '@/lib/supabase'
 import FromLandingBanner from '@/components/FromLandingBanner'
+import { useSuggestion } from '@/hooks/useSuggestion'
 
 function MiniStockChart({ locationId, stockLevels, items }) {
   const locationStocks = stockLevels
-    .filter((s) => s.location_id === locationId)
+    .filter((s) => s.locationId === locationId)
     .map((s) => ({
       ...s,
-      item: items.find((i) => i.id === s.item_id),
+      item: items.find((i) => i.id === s.itemId),
     }))
     .filter((s) => s.item)
     .slice(0, 6) // Display top 6 items
@@ -34,7 +33,7 @@ function MiniStockChart({ locationId, stockLevels, items }) {
     <div className="h-12 bg-slate/50 p-2 rounded-lg flex items-end gap-1.5 border border-border/40">
       {locationStocks.map((s) => {
         const heightPercent = Math.max(10, Math.min(100, (s.qty / maxQty) * 100))
-        const status = getStatus(s.qty, s.reorder_level)
+        const status = getStatus(s.qty, s.reorderLevel)
         const details = getStatusDetails(status)
 
         return (
@@ -46,7 +45,7 @@ function MiniStockChart({ locationId, stockLevels, items }) {
             {/* Tooltip */}
             <div className="absolute bottom-full mb-1.5 hidden group-hover:flex bg-ink text-white text-[10px] py-1 px-1.5 rounded shadow-lg whitespace-nowrap z-30 pointer-events-none flex-col">
               <span className="font-semibold">{s.item.name}</span>
-              <span>Qty: {s.qty} (Reorder: {s.reorder_level})</span>
+              <span>Qty: {s.qty} (Reorder: {s.reorderLevel})</span>
             </div>
           </div>
         )
@@ -58,8 +57,9 @@ function MiniStockChart({ locationId, stockLevels, items }) {
 export default function OverviewPage() {
   const { session } = useRequireUser()
   const { locations, items, stockLevels, loading, error, orgId } = useStock()
+  const { all: transferOpportunities } = useSuggestion(locations, items, stockLevels)
 
-  const fullName = session?.user?.user_metadata?.full_name
+  const fullName = session?.user?.name
   const firstName = fullName ? fullName.split(' ')[0] : null
 
   if (loading) {
@@ -75,14 +75,14 @@ export default function OverviewPage() {
 
   // Process data for display
   const locationsWithStats = locations.map((loc) => {
-    const locStocks = stockLevels.filter((s) => s.location_id === loc.id)
-    
+    const locStocks = stockLevels.filter((s) => s.locationId === loc.id)
+
     let alertCount = 0
     let hasOut = false
     let hasLow = false
 
     locStocks.forEach((s) => {
-      const status = getStatus(s.qty, s.reorder_level)
+      const status = getStatus(s.qty, s.reorderLevel)
       if (status === 'out') {
         alertCount++
         hasOut = true
@@ -109,14 +109,8 @@ export default function OverviewPage() {
 
   return (
     <div className="max-w-5xl">
-      {/* Org missing — animated dialog from animate-ui */}
-      <OrgMissingDialog
-        open={!loading && !orgId}
-        onSignOut={async () => {
-          await supabase.auth.signOut()
-          window.location.href = '/login'
-        }}
-      />
+      {/* The OrgMissingDialog is mounted by the dashboard layout
+          (see M-4 in the security audit) so it's not duplicated here. */}
 
       {/* Database load error banner */}
       {error && (
@@ -150,8 +144,8 @@ export default function OverviewPage() {
 
       {locations.length > 0 && (
         <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${
-          isStockCritical 
-            ? 'bg-amber-bg border-brand-mid/50 text-amber' 
+          isStockCritical
+            ? 'bg-amber-bg border-brand-mid/50 text-amber'
             : 'bg-green-bg border-green-100 text-green'
         }`}>
           {isStockCritical ? (
@@ -170,6 +164,42 @@ export default function OverviewPage() {
             </>
           )}
         </div>
+      )}
+
+      {/* Transfer opportunities — every move the system thinks the
+          org should make right now, regardless of which side of the
+          ledger the current user is looking at. Each card links to
+          the donor's ledger (where the Approve button lives), so the
+          Overview is for triage, the Ledger is for action. */}
+      {transferOpportunities.length > 0 && (
+        <section className="mb-8" aria-labelledby="transfer-opportunities-heading">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2
+              id="transfer-opportunities-heading"
+              className="text-sm font-semibold text-ink uppercase tracking-wider flex items-center gap-2"
+            >
+              <ArrowRightLeft className="w-4 h-4 text-brand" />
+              Transfer opportunities ({transferOpportunities.length})
+            </h2>
+            <Link
+              href="/dashboard/transfers"
+              className="text-xs font-medium text-ink-3 hover:text-ink transition-colors"
+            >
+              View history →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {transferOpportunities.slice(0, 6).map((s) => (
+              <TransferOpportunityCard key={s.id} suggestion={s} />
+            ))}
+          </div>
+          {transferOpportunities.length > 6 && (
+            <p className="mt-3 text-[11px] text-ink-3 text-center">
+              +{transferOpportunities.length - 6} more — see the relevant
+              location ledger for the full list.
+            </p>
+          )}
+        </section>
       )}
 
       {locations.length === 0 ? (
@@ -267,5 +297,54 @@ export default function OverviewPage() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Compact card for a single transfer opportunity on the Overview.
+ *
+ * Designed for *triage*, not action: shows the move in plain terms
+ * (donor → recipient, qty, item) and a "View" link to the donor's
+ * ledger where the Approve button lives. Clicking the whole card
+ * also navigates there, since the whole point of the Overview card
+ * is to take the user one tap closer to action.
+ */
+function TransferOpportunityCard({ suggestion }) {
+  const { item, qty, fromLocation, toLocation } = suggestion
+  return (
+    <Link
+      href={`/dashboard/ledger?locationId=${fromLocation.id}`}
+      className="group block rounded-2xl border border-border bg-card p-4 hover:border-brand/40 hover:shadow-card transition-all duration-200"
+    >
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-[10px] font-mono font-bold text-brand bg-brand-light px-2 py-0.5 rounded truncate max-w-[60%]">
+          {item.sku}
+        </span>
+        <span className="text-[10px] font-semibold text-ink-3 uppercase tracking-wider">
+          {qty} units
+        </span>
+      </div>
+
+      <p className="text-sm font-semibold text-ink truncate mb-2" title={item.name}>
+        {item.name}
+      </p>
+
+      <div className="flex items-center gap-2 text-[11px] text-ink-2">
+        <span className="truncate font-medium max-w-[40%]" title={fromLocation.name}>
+          {fromLocation.name}
+        </span>
+        <ArrowRight className="w-3 h-3 text-brand shrink-0" />
+        <span className="truncate font-medium max-w-[40%]" title={toLocation.name}>
+          {toLocation.name}
+        </span>
+      </div>
+
+      <div className="mt-3 pt-2 border-t border-slate/60 flex items-center justify-between">
+        <span className="text-[10px] text-ink-3">Approve in {fromLocation.name}&rsquo;s ledger</span>
+        <span className="text-[11px] font-semibold text-brand opacity-0 group-hover:opacity-100 transition-opacity">
+          View →
+        </span>
+      </div>
+    </Link>
   )
 }

@@ -23,7 +23,7 @@ export default function FinalCTA() {
           </StaggerItem>
 
           <StaggerItem>
-            <h2 className="font-display text-5xl sm:text-6xl text-white leading-tight mb-6 italic">
+            <h2 className="font-display text-5xl sm:text-6xl text-white leading-tight mb-6">
               Stop managing stock
               <br />
               from a shared notebook.

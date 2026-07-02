@@ -91,10 +91,10 @@ export default function MobileStaffPage() {
 
   // Filter items based on selected location and search query
   const locStocks = stockLevels
-    .filter((s) => s.location_id === selectedLocId)
+    .filter((s) => s.locationId === selectedLocId)
     .map((s) => ({
       ...s,
-      item: items.find((i) => i.id === s.item_id),
+      item: items.find((i) => i.id === s.itemId),
     }))
     .filter((s) => s.item)
     .filter((s) => {
@@ -178,19 +178,19 @@ export default function MobileStaffPage() {
               {/* Adjusters - Touch Target optimized */}
               <div className="flex items-center gap-3 shrink-0">
                 <button
-                  onClick={() => adjustStock(s.location_id, s.item_id, s.qty - 1)}
+                  onClick={() => adjustStock(s.locationId, s.itemId, s.qty - 1)}
                   className="w-12 h-12 rounded-xl border border-border bg-slate/40 flex items-center justify-center text-ink hover:bg-slate active:bg-border-2 transition-colors touch-manipulation"
                   aria-label="Decrement quantity"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                
+
                 <span className="w-8 text-center text-lg font-bold text-ink font-mono">
                   {s.qty}
                 </span>
 
                 <button
-                  onClick={() => adjustStock(s.location_id, s.item_id, s.qty + 1)}
+                  onClick={() => adjustStock(s.locationId, s.itemId, s.qty + 1)}
                   className="w-12 h-12 rounded-xl border border-border bg-slate/40 flex items-center justify-center text-ink hover:bg-slate active:bg-border-2 transition-colors touch-manipulation"
                   aria-label="Increment quantity"
                 >
